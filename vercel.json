@@ -1,8 +1,15 @@
 {
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --frozen-lockfile",
   "env": {
     "NODE_ENV": "production"
+  },
+  "crons": [],
+  "functions": {
+    "dist/index.js": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
   }
 }
