@@ -1,10 +1,26 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { getLoginUrl } from "@/const";
+import { signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
 import { BookOpen, Users, Lightbulb, LogOut } from "lucide-react";
+import { useState } from "react";
 
 export default function Home() {
   const { user, loading, isAuthenticated, logout } = useAuth();
+  const [signingIn, setSigningIn] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setSigningIn(true);
+      setSignInError(null);
+      await signInWithPopup(auth, googleProvider);
+    } catch (error: any) {
+      console.error("Erro ao fazer login com Google:", error);
+      setSignInError(error.message || "Erro ao fazer login. Tente novamente.");
+    } finally {
+      setSigningIn(false);
+    }
+  };
 
   // Layout para usuário logado
   if (isAuthenticated && user) {
@@ -136,19 +152,30 @@ export default function Home() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
                 <button 
-                  onClick={() => {
-                    try {
-                      const url = getLoginUrl();
-                      window.location.href = url;
-                    } catch (error) {
-                      console.error("Erro ao gerar URL de login:", error);
-                      alert("Erro ao conectar. Por favor, tente novamente.");
-                    }
+                  onClick={handleGoogleSignIn}
+                  disabled={signingIn || loading}
+                  style={{ 
+                    backgroundColor: "#7A4E2D", 
+                    color: "#F5F1E8", 
+                    padding: "1.5rem", 
+                    fontSize: "1.125rem", 
+                    fontWeight: "600", 
+                    borderRadius: "0.75rem", 
+                    border: "none", 
+                    cursor: signingIn || loading ? "not-allowed" : "pointer",
+                    opacity: signingIn || loading ? 0.6 : 1,
+                    width: "100%",
+                    transition: "all 0.3s ease"
                   }}
-                  style={{ backgroundColor: "#7A4E2D", color: "#F5F1E8", padding: "1.5rem", fontSize: "1.125rem", fontWeight: "600", borderRadius: "0.75rem", border: "none", cursor: "pointer", width: "100%" }}
                 >
-                  Entrar com Google
+                  {signingIn || loading ? "Conectando..." : "Entrar com Google"}
                 </button>
+                
+                {signInError && (
+                  <p style={{ color: "#E74C3C", fontSize: "0.875rem", textAlign: "center" }}>
+                    {signInError}
+                  </p>
+                )}
                 
                 <p style={{ color: "#5C5C5C", fontSize: "0.75rem", textAlign: "center", paddingLeft: "1rem", paddingRight: "1rem" }}>
                   Ao continuar, você concorda com nossos{" "}
