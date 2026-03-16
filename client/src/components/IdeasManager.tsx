@@ -72,7 +72,7 @@ export default function IdeasManager({ groupCode, onBack }: IdeasManagerProps) {
     <div style={{ backgroundColor: "#F5F1E8", color: "#2B2B2B", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <header style={{ borderBottom: "1px solid #E8E0D0", backgroundColor: "#FFFFFF" }}>
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div style={{ maxWidth: "900px", margin: "0 auto", padding: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div className="flex items-center gap-4">
             <button
               onClick={onBack}
@@ -88,10 +88,10 @@ export default function IdeasManager({ groupCode, onBack }: IdeasManagerProps) {
         </div>
       </header>
 
-      <main style={{ flex: 1 }} className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
+      <main style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "3rem 1rem" }}>
+        <div style={{ maxWidth: "900px", width: "100%" }}>
           {/* Botão Adicionar */}
-          <div className="mb-8 flex justify-between items-center">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
             <h2 style={{ color: "#2B2B2B" }} className="text-2xl font-bold">
               {ideas.length} Ideia(s)
             </h2>
@@ -228,7 +228,7 @@ export default function IdeasManager({ groupCode, onBack }: IdeasManagerProps) {
                   padding: "1.5rem",
                 }}
               >
-                <div className="flex justify-between items-start mb-2">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
                   <div style={{ flex: 1 }}>
                     <h4 style={{ color: "#2B2B2B" }} className="text-lg font-bold">
                       {idea.title}
