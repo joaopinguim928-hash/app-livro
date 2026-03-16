@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { BookOpen, Plus, Trash2, ArrowLeft, Image as ImageIcon } from "lucide-react";
 
 interface Character {
   id: string;
   name: string;
   role: string;
   description: string;
+  imageUrl?: string;
   createdAt: string;
 }
 
@@ -17,7 +18,7 @@ interface CharactersManagerProps {
 export default function CharactersManager({ groupCode, onBack }: CharactersManagerProps) {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ name: "", role: "", description: "" });
+  const [formData, setFormData] = useState({ name: "", role: "", description: "", imageUrl: "" });
   const [error, setError] = useState<string | null>(null);
 
   // Carregar personagens do localStorage
@@ -52,11 +53,12 @@ export default function CharactersManager({ groupCode, onBack }: CharactersManag
       name: formData.name,
       role: formData.role,
       description: formData.description,
+      imageUrl: formData.imageUrl || undefined,
       createdAt: new Date().toISOString(),
     };
 
     setCharacters([...characters, newCharacter]);
-    setFormData({ name: "", role: "", description: "" });
+    setFormData({ name: "", role: "", description: "", imageUrl: "" });
     setShowForm(false);
     setError(null);
   };
@@ -95,11 +97,11 @@ export default function CharactersManager({ groupCode, onBack }: CharactersManag
             <button
               onClick={() => setShowForm(!showForm)}
               style={{
-                backgroundColor: "#7A4E2D",
-                color: "#F5F1E8",
+                backgroundColor: "#F5F1E8",
+                color: "#2B2B2B",
                 padding: "0.75rem 1.5rem",
                 borderRadius: "0.5rem",
-                border: "none",
+                border: "1px solid #E8E0D0",
                 cursor: "pointer",
                 fontWeight: "600",
                 display: "flex",
@@ -169,6 +171,30 @@ export default function CharactersManager({ groupCode, onBack }: CharactersManag
 
                 <div>
                   <label style={{ color: "#2B2B2B", fontWeight: "600", display: "block", marginBottom: "0.5rem" }}>
+                    URL da Imagem (opcional)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="Ex: https://example.com/personagem.jpg"
+                    value={formData.imageUrl}
+                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                    style={{
+                      backgroundColor: "#F5F1E8",
+                      color: "#2B2B2B",
+                      padding: "0.75rem",
+                      borderRadius: "0.5rem",
+                      border: "1px solid #E8E0D0",
+                      fontSize: "1rem",
+                      width: "100%",
+                    }}
+                  />
+                  <p style={{ color: "#5C5C5C", fontSize: "0.75rem", marginTop: "0.5rem" }}>
+                    Cole a URL de uma imagem do seu personagem
+                  </p>
+                </div>
+
+                <div>
+                  <label style={{ color: "#2B2B2B", fontWeight: "600", display: "block", marginBottom: "0.5rem" }}>
                     Descrição
                   </label>
                   <textarea
@@ -197,11 +223,11 @@ export default function CharactersManager({ groupCode, onBack }: CharactersManag
                   <button
                     onClick={handleAddCharacter}
                     style={{
-                      backgroundColor: "#7A4E2D",
-                      color: "#F5F1E8",
+                      backgroundColor: "#F5F1E8",
+                      color: "#2B2B2B",
                       padding: "0.75rem 1.5rem",
                       borderRadius: "0.5rem",
-                      border: "none",
+                      border: "1px solid #E8E0D0",
                       cursor: "pointer",
                       fontWeight: "600",
                       flex: 1,
@@ -212,7 +238,7 @@ export default function CharactersManager({ groupCode, onBack }: CharactersManag
                   <button
                     onClick={() => {
                       setShowForm(false);
-                      setFormData({ name: "", role: "", description: "" });
+                      setFormData({ name: "", role: "", description: "", imageUrl: "" });
                       setError(null);
                     }}
                     style={{
@@ -244,8 +270,51 @@ export default function CharactersManager({ groupCode, onBack }: CharactersManag
                   border: "1px solid #E8E0D0",
                   borderRadius: "0.75rem",
                   padding: "1.5rem",
+                  overflow: "hidden",
                 }}
               >
+                {/* Imagem do Personagem */}
+                {character.imageUrl ? (
+                  <div style={{
+                    marginBottom: "1rem",
+                    borderRadius: "0.5rem",
+                    overflow: "hidden",
+                    backgroundColor: "#F5F1E8",
+                    height: "200px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}>
+                    <img
+                      src={character.imageUrl}
+                      alt={character.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div style={{
+                    marginBottom: "1rem",
+                    borderRadius: "0.5rem",
+                    backgroundColor: "#F5F1E8",
+                    height: "200px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: "column",
+                    gap: "0.5rem",
+                  }}>
+                    <ImageIcon style={{ color: "#C89F65" }} className="w-8 h-8" />
+                    <p style={{ color: "#5C5C5C", fontSize: "0.75rem" }}>Sem imagem</p>
+                  </div>
+                )}
+
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
                   <div>
                     <h4 style={{ color: "#2B2B2B" }} className="text-lg font-bold">

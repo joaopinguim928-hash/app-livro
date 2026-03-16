@@ -183,11 +183,11 @@ export default function Home() {
                     <button
                       onClick={() => handleCopyCode(group.code)}
                       style={{
-                        backgroundColor: "#7A4E2D",
-                        color: "#F5F1E8",
+                        backgroundColor: "#F5F1E8",
+                        color: "#2B2B2B",
                         padding: "0.5rem 1rem",
                         borderRadius: "0.5rem",
-                        border: "none",
+                        border: "1px solid #E8E0D0",
                         cursor: "pointer",
                         fontSize: "0.875rem",
                         fontWeight: "600",
@@ -244,7 +244,7 @@ export default function Home() {
                   }}
                 >
                   <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
-                    <Users style={{ color: "#7A4E2D" }} className="w-6 h-6" />
+                    <Users style={{ color: "#F5F1E8" }} className="w-6 h-6" />
                   </div>
                   <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Personagens</h4>
                   <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Crie e desenvolva os protagonistas da sua história.</p>
@@ -275,7 +275,7 @@ export default function Home() {
                   }}
                 >
                   <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
-                    <Lightbulb style={{ color: "#7A4E2D" }} className="w-6 h-6" />
+                    <Lightbulb style={{ color: "#F5F1E8" }} className="w-6 h-6" />
                   </div>
                   <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Ideias</h4>
                   <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Capture inspirações e rascunhos para sua trama.</p>
@@ -305,11 +305,11 @@ export default function Home() {
                 <button
                   onClick={handleJoinGroup}
                   style={{
-                    backgroundColor: "#7A4E2D",
-                    color: "#F5F1E8",
+                    backgroundColor: "#F5F1E8",
+                    color: "#2B2B2B",
                     padding: "0.75rem",
                     borderRadius: "0.5rem",
-                    border: "none",
+                    border: "1px solid #E8E0D0",
                     cursor: "pointer",
                     fontWeight: "600",
                     fontSize: "1rem",
@@ -450,13 +450,13 @@ export default function Home() {
                   <button 
                     onClick={handleCreateGroup}
                     style={{ 
-                      backgroundColor: "#7A4E2D", 
-                      color: "#F5F1E8", 
+                      backgroundColor: "#F5F1E8", 
+                      color: "#2B2B2B", 
                       padding: "1.5rem", 
                       fontSize: "1.125rem", 
                       fontWeight: "600", 
                       borderRadius: "0.75rem", 
-                      border: "none", 
+                      border: "1px solid #E8E0D0", 
                       cursor: "pointer",
                       width: "100%",
                       transition: "all 0.3s ease"
@@ -486,13 +486,13 @@ export default function Home() {
                   <button 
                     onClick={handleJoinGroup}
                     style={{ 
-                      backgroundColor: "#7A4E2D", 
-                      color: "#F5F1E8", 
+                      backgroundColor: "#F5F1E8", 
+                      color: "#2B2B2B", 
                       padding: "1.5rem", 
                       fontSize: "1.125rem", 
                       fontWeight: "600", 
                       borderRadius: "0.75rem", 
-                      border: "none", 
+                      border: "1px solid #E8E0D0", 
                       cursor: "pointer",
                       width: "100%",
                       transition: "all 0.3s ease"

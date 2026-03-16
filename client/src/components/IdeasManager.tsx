@@ -98,11 +98,11 @@ export default function IdeasManager({ groupCode, onBack }: IdeasManagerProps) {
             <button
               onClick={() => setShowForm(!showForm)}
               style={{
-                backgroundColor: "#7A4E2D",
-                color: "#F5F1E8",
+                backgroundColor: "#F5F1E8",
+                color: "#2B2B2B",
                 padding: "0.75rem 1.5rem",
                 borderRadius: "0.5rem",
-                border: "none",
+                border: "1px solid #E8E0D0",
                 cursor: "pointer",
                 fontWeight: "600",
                 display: "flex",
@@ -179,11 +179,11 @@ export default function IdeasManager({ groupCode, onBack }: IdeasManagerProps) {
                   <button
                     onClick={handleAddIdea}
                     style={{
-                      backgroundColor: "#7A4E2D",
-                      color: "#F5F1E8",
+                      backgroundColor: "#F5F1E8",
+                      color: "#2B2B2B",
                       padding: "0.75rem 1.5rem",
                       borderRadius: "0.5rem",
-                      border: "none",
+                      border: "1px solid #E8E0D0",
                       cursor: "pointer",
                       fontWeight: "600",
                       flex: 1,
