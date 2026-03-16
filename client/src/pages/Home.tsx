@@ -1,10 +1,65 @@
-import { useState } from "react";
-import { BookOpen, Users, Lightbulb, LogOut } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BookOpen, Users, Lightbulb, LogOut, Copy, Check } from "lucide-react";
+
+interface Group {
+  code: string;
+  name: string;
+  createdAt: string;
+}
 
 export default function Home() {
   const [groupCode, setGroupCode] = useState("");
-  const [enteredGroups, setEnteredGroups] = useState<string[]>([]);
+  const [groupName, setGroupName] = useState("");
+  const [enteredGroups, setEnteredGroups] = useState<Group[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"join" | "create">("join");
+
+  // Carregar grupos do localStorage ao iniciar
+  useEffect(() => {
+    const savedGroups = localStorage.getItem("storyweaver-groups");
+    if (savedGroups) {
+      try {
+        setEnteredGroups(JSON.parse(savedGroups));
+      } catch (e) {
+        console.error("Erro ao carregar grupos:", e);
+      }
+    }
+  }, []);
+
+  // Salvar grupos no localStorage sempre que mudar
+  useEffect(() => {
+    localStorage.setItem("storyweaver-groups", JSON.stringify(enteredGroups));
+  }, [enteredGroups]);
+
+  // Gerar código único para o grupo
+  const generateGroupCode = (): string => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
+  const handleCreateGroup = () => {
+    if (!groupName.trim()) {
+      setError("Por favor, digite um nome para o grupo");
+      return;
+    }
+
+    const newCode = generateGroupCode();
+    const newGroup: Group = {
+      code: newCode,
+      name: groupName.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    setEnteredGroups([...enteredGroups, newGroup]);
+    setGroupName("");
+    setError(null);
+    setActiveTab("join");
+  };
 
   const handleJoinGroup = () => {
     if (!groupCode.trim()) {
@@ -12,29 +67,46 @@ export default function Home() {
       return;
     }
 
-    if (enteredGroups.includes(groupCode.trim())) {
+    const codeExists = enteredGroups.some(g => g.code === groupCode.trim());
+    if (codeExists) {
       setError("Você já está neste grupo");
       return;
     }
 
-    // Validar código (exemplo simples - pode ser expandido)
     if (groupCode.trim().length < 3) {
       setError("Código de grupo inválido");
       return;
     }
 
-    setEnteredGroups([...enteredGroups, groupCode.trim()]);
+    // Criar um grupo "ingressado" (sem nome específico)
+    const newGroup: Group = {
+      code: groupCode.trim(),
+      name: `Grupo ${groupCode.trim()}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    setEnteredGroups([...enteredGroups, newGroup]);
     setGroupCode("");
     setError(null);
   };
 
-  const handleLeaveGroup = (group: string) => {
-    setEnteredGroups(enteredGroups.filter(g => g !== group));
+  const handleLeaveGroup = (code: string) => {
+    setEnteredGroups(enteredGroups.filter(g => g.code !== code));
+  };
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      handleJoinGroup();
+      if (activeTab === "join") {
+        handleJoinGroup();
+      } else {
+        handleCreateGroup();
+      }
     }
   };
 
@@ -57,7 +129,7 @@ export default function Home() {
         </header>
         
         <main style={{ flex: 1 }} className="container mx-auto px-4 py-12">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <div className="mb-12">
               <h2 style={{ color: "#2B2B2B" }} className="text-3xl font-bold mb-2">Bem-vindo ao StoryWeaver</h2>
               <p style={{ color: "#5C5C5C" }}>Você está em {enteredGroups.length} grupo(s). Comece a criar sua história!</p>
@@ -66,21 +138,53 @@ export default function Home() {
             {/* Grupos Ativos */}
             <div className="mb-12">
               <h3 style={{ color: "#2B2B2B" }} className="text-2xl font-bold mb-6">Seus Grupos</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {enteredGroups.map((group) => (
-                  <div key={group} style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "1.5rem" }}>
+                  <div key={group.code} style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "1.5rem" }}>
                     <div className="flex justify-between items-start mb-4">
-                      <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold">Grupo: {group}</h4>
+                      <div>
+                        <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold">{group.name}</h4>
+                        <p style={{ color: "#5C5C5C", fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                          Código: <strong>{group.code}</strong>
+                        </p>
+                      </div>
                       <button
-                        onClick={() => handleLeaveGroup(group)}
+                        onClick={() => handleLeaveGroup(group.code)}
                         style={{ color: "#E74C3C", background: "none", border: "none", cursor: "pointer", fontSize: "0.875rem", fontWeight: "600" }}
                       >
                         Sair
                       </button>
                     </div>
-                    <p style={{ color: "#5C5C5C", fontSize: "0.875rem", marginBottom: "1rem" }}>
-                      Código do grupo: <strong>{group}</strong>
-                    </p>
+                    <button
+                      onClick={() => handleCopyCode(group.code)}
+                      style={{
+                        backgroundColor: "#7A4E2D",
+                        color: "#F5F1E8",
+                        padding: "0.5rem 1rem",
+                        borderRadius: "0.5rem",
+                        border: "none",
+                        cursor: "pointer",
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        width: "100%",
+                        justifyContent: "center"
+                      }}
+                    >
+                      {copiedCode === group.code ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          Copiado!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          Copiar Código
+                        </>
+                      )}
+                    </button>
                   </div>
                 ))}
               </div>
@@ -118,7 +222,7 @@ export default function Home() {
 
             {/* Entrar em Novo Grupo */}
             <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "2rem" }}>
-              <h3 style={{ color: "#2B2B2B" }} className="text-xl font-bold mb-4">Entrar em Outro Grupo</h3>
+              <h3 style={{ color: "#2B2B2B" }} className="text-xl font-bold mb-4">Gerenciar Grupos</h3>
               <div style={{ display: "flex", gap: "1rem", flexDirection: "column", maxWidth: "400px" }}>
                 <input
                   type="text"
@@ -148,7 +252,7 @@ export default function Home() {
                     fontSize: "1rem",
                   }}
                 >
-                  Entrar no Grupo
+                  Entrar em Outro Grupo
                 </button>
                 {error && (
                   <p style={{ color: "#E74C3C", fontSize: "0.875rem" }}>{error}</p>
@@ -218,51 +322,124 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Join Group Section */}
+        {/* Join/Create Group Section */}
         <section style={{ backgroundColor: "#F5F1E8", padding: "6rem 0" }}>
           <div className="container mx-auto px-4">
             <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "1.5rem", padding: "2rem", maxWidth: "28rem", margin: "0 auto", boxShadow: "0 10px 25px rgba(43, 43, 43, 0.08)" }}>
               <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
                 <h2 style={{ color: "#2B2B2B" }} className="text-3xl font-bold mb-2">StoryWeaver</h2>
                 <h3 style={{ color: "#2B2B2B" }} className="text-xl font-medium">Bem-vindo</h3>
-                <p style={{ color: "#5C5C5C", marginTop: "0.5rem" }}>Insira o código do seu grupo para começar</p>
+                <p style={{ color: "#5C5C5C", marginTop: "0.5rem" }}>Crie um novo grupo ou entre em um existente</p>
+              </div>
+
+              {/* Tabs */}
+              <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", borderBottom: "1px solid #E8E0D0", paddingBottom: "1rem" }}>
+                <button
+                  onClick={() => setActiveTab("create")}
+                  style={{
+                    flex: 1,
+                    padding: "0.75rem",
+                    borderBottom: activeTab === "create" ? "3px solid #7A4E2D" : "none",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    color: activeTab === "create" ? "#7A4E2D" : "#5C5C5C",
+                    fontWeight: activeTab === "create" ? "600" : "500",
+                  }}
+                >
+                  Criar Grupo
+                </button>
+                <button
+                  onClick={() => setActiveTab("join")}
+                  style={{
+                    flex: 1,
+                    padding: "0.75rem",
+                    borderBottom: activeTab === "join" ? "3px solid #7A4E2D" : "none",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    color: activeTab === "join" ? "#7A4E2D" : "#5C5C5C",
+                    fontWeight: activeTab === "join" ? "600" : "500",
+                  }}
+                >
+                  Entrar em Grupo
+                </button>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-                <input
-                  type="text"
-                  placeholder="Código do grupo"
-                  value={groupCode}
-                  onChange={(e) => setGroupCode(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  style={{
-                    backgroundColor: "#F5F1E8",
-                    color: "#2B2B2B",
-                    padding: "1rem",
-                    borderRadius: "0.75rem",
-                    border: "1px solid #E8E0D0",
-                    fontSize: "1rem",
-                    fontWeight: "500",
-                  }}
-                />
-                
-                <button 
-                  onClick={handleJoinGroup}
-                  style={{ 
-                    backgroundColor: "#7A4E2D", 
-                    color: "#F5F1E8", 
-                    padding: "1.5rem", 
-                    fontSize: "1.125rem", 
-                    fontWeight: "600", 
-                    borderRadius: "0.75rem", 
-                    border: "none", 
-                    cursor: "pointer",
-                    width: "100%",
-                    transition: "all 0.3s ease"
-                  }}
-                >
-                  Entrar no Grupo
-                </button>
+                {activeTab === "create" ? (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="Nome do seu grupo/história"
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      style={{
+                        backgroundColor: "#F5F1E8",
+                        color: "#2B2B2B",
+                        padding: "1rem",
+                        borderRadius: "0.75rem",
+                        border: "1px solid #E8E0D0",
+                        fontSize: "1rem",
+                        fontWeight: "500",
+                      }}
+                    />
+                    <button 
+                      onClick={handleCreateGroup}
+                      style={{ 
+                        backgroundColor: "#7A4E2D", 
+                        color: "#F5F1E8", 
+                        padding: "1.5rem", 
+                        fontSize: "1.125rem", 
+                        fontWeight: "600", 
+                        borderRadius: "0.75rem", 
+                        border: "none", 
+                        cursor: "pointer",
+                        width: "100%",
+                        transition: "all 0.3s ease"
+                      }}
+                    >
+                      Criar Novo Grupo
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      placeholder="Código do grupo"
+                      value={groupCode}
+                      onChange={(e) => setGroupCode(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      style={{
+                        backgroundColor: "#F5F1E8",
+                        color: "#2B2B2B",
+                        padding: "1rem",
+                        borderRadius: "0.75rem",
+                        border: "1px solid #E8E0D0",
+                        fontSize: "1rem",
+                        fontWeight: "500",
+                      }}
+                    />
+                    <button 
+                      onClick={handleJoinGroup}
+                      style={{ 
+                        backgroundColor: "#7A4E2D", 
+                        color: "#F5F1E8", 
+                        padding: "1.5rem", 
+                        fontSize: "1.125rem", 
+                        fontWeight: "600", 
+                        borderRadius: "0.75rem", 
+                        border: "none", 
+                        cursor: "pointer",
+                        width: "100%",
+                        transition: "all 0.3s ease"
+                      }}
+                    >
+                      Entrar no Grupo
+                    </button>
+                  </>
+                )}
                 
                 {error && (
                   <p style={{ color: "#E74C3C", fontSize: "0.875rem", textAlign: "center" }}>
