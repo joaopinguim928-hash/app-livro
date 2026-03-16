@@ -1,29 +1,45 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { signInWithPopup } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
-import { BookOpen, Users, Lightbulb, LogOut } from "lucide-react";
 import { useState } from "react";
+import { BookOpen, Users, Lightbulb, LogOut } from "lucide-react";
 
 export default function Home() {
-  const { user, loading, isAuthenticated, logout } = useAuth();
-  const [signingIn, setSigningIn] = useState(false);
-  const [signInError, setSignInError] = useState<string | null>(null);
+  const [groupCode, setGroupCode] = useState("");
+  const [enteredGroups, setEnteredGroups] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleGoogleSignIn = async () => {
-    try {
-      setSigningIn(true);
-      setSignInError(null);
-      await signInWithPopup(auth, googleProvider);
-    } catch (error: any) {
-      console.error("Erro ao fazer login com Google:", error);
-      setSignInError(error.message || "Erro ao fazer login. Tente novamente.");
-    } finally {
-      setSigningIn(false);
+  const handleJoinGroup = () => {
+    if (!groupCode.trim()) {
+      setError("Por favor, digite um código de grupo");
+      return;
+    }
+
+    if (enteredGroups.includes(groupCode.trim())) {
+      setError("Você já está neste grupo");
+      return;
+    }
+
+    // Validar código (exemplo simples - pode ser expandido)
+    if (groupCode.trim().length < 3) {
+      setError("Código de grupo inválido");
+      return;
+    }
+
+    setEnteredGroups([...enteredGroups, groupCode.trim()]);
+    setGroupCode("");
+    setError(null);
+  };
+
+  const handleLeaveGroup = (group: string) => {
+    setEnteredGroups(enteredGroups.filter(g => g !== group));
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleJoinGroup();
     }
   };
 
-  // Layout para usuário logado
-  if (isAuthenticated && user) {
+  // Se o usuário entrou em algum grupo, mostrar o dashboard
+  if (enteredGroups.length > 0) {
     return (
       <div style={{ backgroundColor: "#F5F1E8", color: "#2B2B2B", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <header style={{ borderBottom: "1px solid #E8E0D0", backgroundColor: "#FFFFFF" }}>
@@ -33,14 +49,9 @@ export default function Home() {
               <h1 style={{ color: "#2B2B2B" }} className="text-xl font-bold tracking-tight">StoryWeaver</h1>
             </div>
             <div className="flex items-center gap-4">
-              <span style={{ color: "#5C5C5C" }} className="text-sm hidden sm:inline">{user.email}</span>
-              <button 
-                onClick={() => logout()}
-                style={{ color: "#7A4E2D", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: "600" }}
-              >
-                <LogOut className="w-4 h-4" />
-                Sair
-              </button>
+              <span style={{ color: "#5C5C5C" }} className="text-sm hidden sm:inline">
+                {enteredGroups.length} grupo(s) ativo(s)
+              </span>
             </div>
           </div>
         </header>
@@ -48,33 +59,100 @@ export default function Home() {
         <main style={{ flex: 1 }} className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto">
             <div className="mb-12">
-              <h2 style={{ color: "#2B2B2B" }} className="text-3xl font-bold mb-2">Bem-vindo de volta, {user.name || "Escritor"}!</h2>
-              <p style={{ color: "#5C5C5C" }}>O que vamos criar hoje?</p>
+              <h2 style={{ color: "#2B2B2B" }} className="text-3xl font-bold mb-2">Bem-vindo ao StoryWeaver</h2>
+              <p style={{ color: "#5C5C5C" }}>Você está em {enteredGroups.length} grupo(s). Comece a criar sua história!</p>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "1.5rem" }}>
-                <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
-                  <Users style={{ color: "#7A4E2D" }} className="w-6 h-6" />
-                </div>
-                <h3 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Personagens</h3>
-                <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Gerencie e desenvolva os protagonistas da sua história.</p>
+
+            {/* Grupos Ativos */}
+            <div className="mb-12">
+              <h3 style={{ color: "#2B2B2B" }} className="text-2xl font-bold mb-6">Seus Grupos</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {enteredGroups.map((group) => (
+                  <div key={group} style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "1.5rem" }}>
+                    <div className="flex justify-between items-start mb-4">
+                      <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold">Grupo: {group}</h4>
+                      <button
+                        onClick={() => handleLeaveGroup(group)}
+                        style={{ color: "#E74C3C", background: "none", border: "none", cursor: "pointer", fontSize: "0.875rem", fontWeight: "600" }}
+                      >
+                        Sair
+                      </button>
+                    </div>
+                    <p style={{ color: "#5C5C5C", fontSize: "0.875rem", marginBottom: "1rem" }}>
+                      Código do grupo: <strong>{group}</strong>
+                    </p>
+                  </div>
+                ))}
               </div>
-              
-              <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "1.5rem" }}>
-                <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
-                  <Lightbulb style={{ color: "#7A4E2D" }} className="w-6 h-6" />
+            </div>
+
+            {/* Funcionalidades Principais */}
+            <div className="mb-12">
+              <h3 style={{ color: "#2B2B2B" }} className="text-2xl font-bold mb-6">Funcionalidades</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "1.5rem" }}>
+                  <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
+                    <Users style={{ color: "#7A4E2D" }} className="w-6 h-6" />
+                  </div>
+                  <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Personagens</h4>
+                  <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Gerencie e desenvolva os protagonistas da sua história.</p>
                 </div>
-                <h3 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Ideias</h3>
-                <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Capture inspirações e rascunhos rápidos para sua trama.</p>
+                
+                <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "1.5rem" }}>
+                  <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
+                    <Lightbulb style={{ color: "#7A4E2D" }} className="w-6 h-6" />
+                  </div>
+                  <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Ideias</h4>
+                  <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Capture inspirações e rascunhos rápidos para sua trama.</p>
+                </div>
+                
+                <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "1.5rem" }}>
+                  <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
+                    <BookOpen style={{ color: "#7A4E2D" }} className="w-6 h-6" />
+                  </div>
+                  <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Capítulos</h4>
+                  <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Organize a estrutura e o fluxo narrativo do seu livro.</p>
+                </div>
               </div>
-              
-              <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "1.5rem" }}>
-                <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
-                  <BookOpen style={{ color: "#7A4E2D" }} className="w-6 h-6" />
-                </div>
-                <h3 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Capítulos</h3>
-                <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Organize a estrutura e o fluxo narrativo do seu livro.</p>
+            </div>
+
+            {/* Entrar em Novo Grupo */}
+            <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "2rem" }}>
+              <h3 style={{ color: "#2B2B2B" }} className="text-xl font-bold mb-4">Entrar em Outro Grupo</h3>
+              <div style={{ display: "flex", gap: "1rem", flexDirection: "column", maxWidth: "400px" }}>
+                <input
+                  type="text"
+                  placeholder="Digite o código do grupo"
+                  value={groupCode}
+                  onChange={(e) => setGroupCode(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  style={{
+                    backgroundColor: "#F5F1E8",
+                    color: "#2B2B2B",
+                    padding: "0.75rem",
+                    borderRadius: "0.5rem",
+                    border: "1px solid #E8E0D0",
+                    fontSize: "1rem",
+                  }}
+                />
+                <button
+                  onClick={handleJoinGroup}
+                  style={{
+                    backgroundColor: "#7A4E2D",
+                    color: "#F5F1E8",
+                    padding: "0.75rem",
+                    borderRadius: "0.5rem",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    fontSize: "1rem",
+                  }}
+                >
+                  Entrar no Grupo
+                </button>
+                {error && (
+                  <p style={{ color: "#E74C3C", fontSize: "0.875rem" }}>{error}</p>
+                )}
               </div>
             </div>
           </div>
@@ -83,7 +161,7 @@ export default function Home() {
     );
   }
 
-  // Layout Landing Page
+  // Landing Page - Antes de entrar em um grupo
   return (
     <div style={{ backgroundColor: "#F5F1E8", color: "#2B2B2B", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       {/* Header */}
@@ -140,20 +218,36 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Login Card Section */}
+        {/* Join Group Section */}
         <section style={{ backgroundColor: "#F5F1E8", padding: "6rem 0" }}>
           <div className="container mx-auto px-4">
             <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "1.5rem", padding: "2rem", maxWidth: "28rem", margin: "0 auto", boxShadow: "0 10px 25px rgba(43, 43, 43, 0.08)" }}>
               <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
                 <h2 style={{ color: "#2B2B2B" }} className="text-3xl font-bold mb-2">StoryWeaver</h2>
-                <h3 style={{ color: "#2B2B2B" }} className="text-xl font-medium">Bem-vindo de volta</h3>
-                <p style={{ color: "#5C5C5C", marginTop: "0.5rem" }}>Entre para continuar sua história</p>
+                <h3 style={{ color: "#2B2B2B" }} className="text-xl font-medium">Bem-vindo</h3>
+                <p style={{ color: "#5C5C5C", marginTop: "0.5rem" }}>Insira o código do seu grupo para começar</p>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <input
+                  type="text"
+                  placeholder="Código do grupo"
+                  value={groupCode}
+                  onChange={(e) => setGroupCode(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  style={{
+                    backgroundColor: "#F5F1E8",
+                    color: "#2B2B2B",
+                    padding: "1rem",
+                    borderRadius: "0.75rem",
+                    border: "1px solid #E8E0D0",
+                    fontSize: "1rem",
+                    fontWeight: "500",
+                  }}
+                />
+                
                 <button 
-                  onClick={handleGoogleSignIn}
-                  disabled={signingIn || loading}
+                  onClick={handleJoinGroup}
                   style={{ 
                     backgroundColor: "#7A4E2D", 
                     color: "#F5F1E8", 
@@ -162,18 +256,17 @@ export default function Home() {
                     fontWeight: "600", 
                     borderRadius: "0.75rem", 
                     border: "none", 
-                    cursor: signingIn || loading ? "not-allowed" : "pointer",
-                    opacity: signingIn || loading ? 0.6 : 1,
+                    cursor: "pointer",
                     width: "100%",
                     transition: "all 0.3s ease"
                   }}
                 >
-                  {signingIn || loading ? "Conectando..." : "Entrar com Google"}
+                  Entrar no Grupo
                 </button>
                 
-                {signInError && (
+                {error && (
                   <p style={{ color: "#E74C3C", fontSize: "0.875rem", textAlign: "center" }}>
-                    {signInError}
+                    {error}
                   </p>
                 )}
                 
