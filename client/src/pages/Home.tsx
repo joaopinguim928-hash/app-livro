@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Users, Lightbulb, LogOut, Copy, Check } from "lucide-react";
+import { BookOpen, Users, Lightbulb, Copy, Check } from "lucide-react";
+import CharactersManager from "@/components/CharactersManager";
+import IdeasManager from "@/components/IdeasManager";
 
 interface Group {
   code: string;
   name: string;
   createdAt: string;
 }
+
+type ViewType = "dashboard" | "characters" | "ideas";
 
 export default function Home() {
   const [groupCode, setGroupCode] = useState("");
@@ -14,6 +18,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"join" | "create">("join");
+  const [currentView, setCurrentView] = useState<ViewType>("dashboard");
+  const [activeGroupCode, setActiveGroupCode] = useState<string | null>(null);
 
   // Carregar grupos do localStorage ao iniciar
   useEffect(() => {
@@ -78,7 +84,6 @@ export default function Home() {
       return;
     }
 
-    // Criar um grupo "ingressado" (sem nome específico)
     const newGroup: Group = {
       code: groupCode.trim(),
       name: `Grupo ${groupCode.trim()}`,
@@ -110,8 +115,28 @@ export default function Home() {
     }
   };
 
+  // Se está visualizando Personagens
+  if (currentView === "characters" && activeGroupCode) {
+    return (
+      <CharactersManager
+        groupCode={activeGroupCode}
+        onBack={() => setCurrentView("dashboard")}
+      />
+    );
+  }
+
+  // Se está visualizando Ideias
+  if (currentView === "ideas" && activeGroupCode) {
+    return (
+      <IdeasManager
+        groupCode={activeGroupCode}
+        onBack={() => setCurrentView("dashboard")}
+      />
+    );
+  }
+
   // Se o usuário entrou em algum grupo, mostrar o dashboard
-  if (enteredGroups.length > 0) {
+  if (enteredGroups.length > 0 && currentView === "dashboard") {
     return (
       <div style={{ backgroundColor: "#F5F1E8", color: "#2B2B2B", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <header style={{ borderBottom: "1px solid #E8E0D0", backgroundColor: "#FFFFFF" }}>
@@ -192,30 +217,78 @@ export default function Home() {
 
             {/* Funcionalidades Principais */}
             <div className="mb-12">
-              <h3 style={{ color: "#2B2B2B" }} className="text-2xl font-bold mb-6">Funcionalidades</h3>
+              <h3 style={{ color: "#2B2B2B" }} className="text-2xl font-bold mb-6">Ferramentas</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "1.5rem" }}>
+                <button
+                  onClick={() => {
+                    setActiveGroupCode(enteredGroups[0].code);
+                    setCurrentView("characters");
+                  }}
+                  style={{
+                    backgroundColor: "#FFFFFF",
+                    borderColor: "#E8E0D0",
+                    border: "1px solid #E8E0D0",
+                    borderRadius: "0.75rem",
+                    padding: "1.5rem",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "all 0.3s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(122, 78, 45, 0.1)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
                   <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
                     <Users style={{ color: "#7A4E2D" }} className="w-6 h-6" />
                   </div>
                   <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Personagens</h4>
                   <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Gerencie e desenvolva os protagonistas da sua história.</p>
-                </div>
+                </button>
                 
-                <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "1.5rem" }}>
+                <button
+                  onClick={() => {
+                    setActiveGroupCode(enteredGroups[0].code);
+                    setCurrentView("ideas");
+                  }}
+                  style={{
+                    backgroundColor: "#FFFFFF",
+                    borderColor: "#E8E0D0",
+                    border: "1px solid #E8E0D0",
+                    borderRadius: "0.75rem",
+                    padding: "1.5rem",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "all 0.3s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(122, 78, 45, 0.1)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
                   <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
                     <Lightbulb style={{ color: "#7A4E2D" }} className="w-6 h-6" />
                   </div>
                   <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Ideias</h4>
                   <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Capture inspirações e rascunhos rápidos para sua trama.</p>
-                </div>
+                </button>
                 
-                <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "1.5rem" }}>
+                <div style={{
+                  backgroundColor: "#FFFFFF",
+                  borderColor: "#E8E0D0",
+                  border: "1px solid #E8E0D0",
+                  borderRadius: "0.75rem",
+                  padding: "1.5rem",
+                }}>
                   <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
                     <BookOpen style={{ color: "#7A4E2D" }} className="w-6 h-6" />
                   </div>
                   <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Capítulos</h4>
-                  <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Organize a estrutura e o fluxo narrativo do seu livro.</p>
+                  <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Organize a estrutura e o fluxo narrativo do seu livro. (Em breve)</p>
                 </div>
               </div>
             </div>
