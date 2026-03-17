@@ -244,7 +244,7 @@ export default function Home() {
                   }}
                 >
                   <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
-                    <Users style={{ color: "#F5F1E8" }} className="w-6 h-6" />
+                    <Users style={{ color: "#7A4E2D" }} className="w-6 h-6" />
                   </div>
                   <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Personagens</h4>
                   <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Crie e desenvolva os protagonistas da sua história.</p>
@@ -275,7 +275,7 @@ export default function Home() {
                   }}
                 >
                   <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
-                    <Lightbulb style={{ color: "#F5F1E8" }} className="w-6 h-6" />
+                    <Lightbulb style={{ color: "#7A4E2D" }} className="w-6 h-6" />
                   </div>
                   <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Ideias</h4>
                   <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Capture inspirações e rascunhos para sua trama.</p>
