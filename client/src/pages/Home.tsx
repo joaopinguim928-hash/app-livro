@@ -84,13 +84,26 @@ export default function Home() {
       return;
     }
 
-    const newGroup: Group = {
-      code: groupCode.trim(),
-      name: `Grupo ${groupCode.trim()}`,
-      createdAt: new Date().toISOString(),
-    };
+    // Procurar o grupo no localStorage por código
+    const savedGroups = localStorage.getItem("storyweaver-groups");
+    let allGroups: Group[] = [];
+    if (savedGroups) {
+      try {
+        allGroups = JSON.parse(savedGroups);
+      } catch (e) {
+        console.error("Erro ao carregar grupos:", e);
+      }
+    }
 
-    setEnteredGroups([...enteredGroups, newGroup]);
+    // Verificar se o código existe em algum grupo criado
+    const foundGroup = allGroups.find(g => g.code === groupCode.trim());
+    if (!foundGroup) {
+      setError("Código de grupo não encontrado. Verifique se o código está correto.");
+      return;
+    }
+
+    // Se o grupo foi encontrado, adicionar à lista de grupos do usuário
+    setEnteredGroups([...enteredGroups, foundGroup]);
     setGroupCode("");
     setError(null);
   };
