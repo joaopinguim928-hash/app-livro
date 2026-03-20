@@ -11,31 +11,36 @@ interface Group {
 
 type ViewType = "dashboard" | "characters" | "ideas";
 
+// Chaves do localStorage
+const MASTER_REGISTRY_KEY = "storyweaver-master-registry";
+const USER_GROUPS_KEY = "storyweaver-user-groups";
+
 export default function Home() {
   const [groupCode, setGroupCode] = useState("");
   const [groupName, setGroupName] = useState("");
   const [enteredGroups, setEnteredGroups] = useState<Group[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"join" | "create">("join");
+  const [activeTab, setActiveTab] = useState<"join" | "create">("create");
   const [currentView, setCurrentView] = useState<ViewType>("dashboard");
   const [activeGroupCode, setActiveGroupCode] = useState<string | null>(null);
 
   // Carregar grupos do localStorage ao iniciar
   useEffect(() => {
-    const savedGroups = localStorage.getItem("storyweaver-groups");
-    if (savedGroups) {
+    // Carregar grupos do usuário (grupos que ele entrou)
+    const savedUserGroups = localStorage.getItem(USER_GROUPS_KEY);
+    if (savedUserGroups) {
       try {
-        setEnteredGroups(JSON.parse(savedGroups));
+        setEnteredGroups(JSON.parse(savedUserGroups));
       } catch (e) {
-        console.error("Erro ao carregar grupos:", e);
+        console.error("Erro ao carregar grupos do usuário:", e);
       }
     }
   }, []);
 
-  // Salvar grupos no localStorage sempre que mudar
+  // Salvar grupos do usuário no localStorage sempre que mudar
   useEffect(() => {
-    localStorage.setItem("storyweaver-groups", JSON.stringify(enteredGroups));
+    localStorage.setItem(USER_GROUPS_KEY, JSON.stringify(enteredGroups));
   }, [enteredGroups]);
 
   // Gerar código único para o grupo
@@ -46,6 +51,25 @@ export default function Home() {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return code;
+  };
+
+  // Obter o registro master (todos os grupos criados)
+  const getMasterRegistry = (): Group[] => {
+    const registry = localStorage.getItem(MASTER_REGISTRY_KEY);
+    if (registry) {
+      try {
+        return JSON.parse(registry);
+      } catch (e) {
+        console.error("Erro ao carregar registro master:", e);
+        return [];
+      }
+    }
+    return [];
+  };
+
+  // Salvar no registro master
+  const saveMasterRegistry = (groups: Group[]) => {
+    localStorage.setItem(MASTER_REGISTRY_KEY, JSON.stringify(groups));
   };
 
   const handleCreateGroup = () => {
@@ -61,6 +85,12 @@ export default function Home() {
       createdAt: new Date().toISOString(),
     };
 
+    // Adicionar ao registro master (todos os grupos criados)
+    const masterRegistry = getMasterRegistry();
+    masterRegistry.push(newGroup);
+    saveMasterRegistry(masterRegistry);
+
+    // Adicionar aos grupos do usuário
     setEnteredGroups([...enteredGroups, newGroup]);
     setGroupName("");
     setError(null);
@@ -84,19 +114,10 @@ export default function Home() {
       return;
     }
 
-    // Procurar o grupo no localStorage por código
-    const savedGroups = localStorage.getItem("storyweaver-groups");
-    let allGroups: Group[] = [];
-    if (savedGroups) {
-      try {
-        allGroups = JSON.parse(savedGroups);
-      } catch (e) {
-        console.error("Erro ao carregar grupos:", e);
-      }
-    }
-
-    // Verificar se o código existe em algum grupo criado
-    const foundGroup = allGroups.find(g => g.code === groupCode.trim());
+    // Procurar o grupo no registro master
+    const masterRegistry = getMasterRegistry();
+    const foundGroup = masterRegistry.find(g => g.code === groupCode.trim());
+    
     if (!foundGroup) {
       setError("Código de grupo não encontrado. Verifique se o código está correto.");
       return;
@@ -118,77 +139,99 @@ export default function Home() {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      if (activeTab === "join") {
-        handleJoinGroup();
-      } else {
+      if (activeTab === "create") {
         handleCreateGroup();
+      } else {
+        handleJoinGroup();
       }
     }
   };
 
-  // Se está visualizando Personagens
-  if (currentView === "characters" && activeGroupCode) {
-    return (
-      <CharactersManager
-        groupCode={activeGroupCode}
-        onBack={() => setCurrentView("dashboard")}
-      />
-    );
-  }
+  // Se o usuário está em um grupo, mostrar o dashboard
+  if (enteredGroups.length > 0 && activeGroupCode) {
+    const activeGroup = enteredGroups.find(g => g.code === activeGroupCode);
+    if (!activeGroup) return null;
 
-  // Se está visualizando Ideias
-  if (currentView === "ideas" && activeGroupCode) {
-    return (
-      <IdeasManager
-        groupCode={activeGroupCode}
-        onBack={() => setCurrentView("dashboard")}
-      />
-    );
-  }
+    if (currentView === "characters") {
+      return (
+        <CharactersManager
+          groupCode={activeGroupCode}
+          onBack={() => setCurrentView("dashboard")}
+        />
+      );
+    }
 
-  // Se o usuário entrou em algum grupo, mostrar o dashboard
-  if (enteredGroups.length > 0 && currentView === "dashboard") {
+    if (currentView === "ideas") {
+      return (
+        <IdeasManager
+          groupCode={activeGroupCode}
+          onBack={() => setCurrentView("dashboard")}
+        />
+      );
+    }
+
     return (
       <div style={{ backgroundColor: "#F5F1E8", color: "#2B2B2B", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <header style={{ borderBottom: "1px solid #E8E0D0", backgroundColor: "#FFFFFF" }}>
+        <header style={{ borderBottom: "1px solid #E8E0D0", backgroundColor: "#FFFFFF", position: "sticky", top: 0, zIndex: 50 }}>
           <div style={{ maxWidth: "900px", margin: "0 auto", padding: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div className="flex items-center gap-2">
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <BookOpen style={{ color: "#7A4E2D" }} className="w-6 h-6" />
-              <h1 style={{ color: "#2B2B2B" }} className="text-xl font-bold tracking-tight">StoryWeaver</h1>
+              <span style={{ color: "#2B2B2B" }} className="text-xl font-bold">StoryWeaver</span>
             </div>
-            <div className="flex items-center gap-4">
-              <span style={{ color: "#5C5C5C" }} className="text-sm hidden sm:inline">
-                {enteredGroups.length} grupo(s)
-              </span>
-            </div>
+            <span style={{ fontSize: "0.875rem", color: "#5C5C5C" }}>{enteredGroups.length} grupo(s)</span>
           </div>
         </header>
-        
-        <main style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "3rem 1rem" }}>
-          <div style={{ maxWidth: "900px", width: "100%" }}>
-            <div className="mb-12">
-              <h2 style={{ color: "#2B2B2B" }} className="text-3xl font-bold mb-2">Bem-vindo ao StoryWeaver</h2>
-              <p style={{ color: "#5C5C5C" }}>Você está em {enteredGroups.length} grupo(s). Comece a criar sua história!</p>
-            </div>
 
-            {/* Grupos Ativos */}
-            <div className="mb-12">
-              <h3 style={{ color: "#2B2B2B" }} className="text-2xl font-bold mb-6">Seus Grupos</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem" }}>
+        <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "2rem 1rem" }}>
+          <div style={{ maxWidth: "900px", width: "100%" }}>
+            <h1 style={{ color: "#2B2B2B", fontSize: "2rem", fontWeight: "bold", marginBottom: "0.5rem" }}>
+              Bem-vindo ao StoryWeaver
+            </h1>
+            <p style={{ color: "#5C5C5C", marginBottom: "2rem" }}>
+              Você está em {enteredGroups.length} grupo(s). Comece a criar sua história!
+            </p>
+
+            {/* Seus Grupos */}
+            <section style={{ marginBottom: "3rem" }}>
+              <h2 style={{ color: "#2B2B2B", fontSize: "1.5rem", fontWeight: "bold", marginBottom: "1.5rem" }}>
+                Seus Grupos
+              </h2>
+              <div style={{ display: "grid", gap: "1.5rem" }}>
                 {enteredGroups.map((group) => (
-                  <div key={group.code} style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "1.5rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
+                  <div
+                    key={group.code}
+                    style={{
+                      backgroundColor: "#FFFFFF",
+                      borderColor: "#E8E0D0",
+                      border: "1px solid #E8E0D0",
+                      borderRadius: "1rem",
+                      padding: "1.5rem",
+                      boxShadow: "0 4px 6px rgba(43, 43, 43, 0.05)",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "1rem" }}>
                       <div>
-                        <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold">{group.name}</h4>
+                        <h3 style={{ color: "#2B2B2B", fontSize: "1.25rem", fontWeight: "bold" }}>
+                          {group.name}
+                        </h3>
                         <p style={{ color: "#5C5C5C", fontSize: "0.875rem", marginTop: "0.25rem" }}>
-                          Código: <strong>{group.code}</strong>
+                          Código: {group.code}
                         </p>
                       </div>
                       <button
                         onClick={() => handleLeaveGroup(group.code)}
-                        style={{ color: "#E74C3C", background: "none", border: "none", cursor: "pointer", fontSize: "0.875rem", fontWeight: "600" }}
+                        style={{
+                          backgroundColor: "#E8E0D0",
+                          color: "#2B2B2B",
+                          padding: "0.5rem 1rem",
+                          borderRadius: "0.5rem",
+                          border: "none",
+                          cursor: "pointer",
+                          fontSize: "0.875rem",
+                          fontWeight: "600",
+                        }}
                       >
                         Sair
                       </button>
@@ -196,25 +239,25 @@ export default function Home() {
                     <button
                       onClick={() => handleCopyCode(group.code)}
                       style={{
-                        backgroundColor: "#F5F1E8",
-                        color: "#2B2B2B",
-                        padding: "0.5rem 1rem",
+                        backgroundColor: "#7A4E2D",
+                        color: "#FFFFFF",
+                        padding: "0.75rem 1rem",
                         borderRadius: "0.5rem",
-                        border: "1px solid #E8E0D0",
+                        border: "none",
                         cursor: "pointer",
-                        fontSize: "0.875rem",
                         fontWeight: "600",
                         display: "flex",
                         alignItems: "center",
                         gap: "0.5rem",
                         width: "100%",
-                        justifyContent: "center"
+                        justifyContent: "center",
+                        marginBottom: "1rem",
                       }}
                     >
                       {copiedCode === group.code ? (
                         <>
                           <Check className="w-4 h-4" />
-                          Copiado!
+                          Código Copiado!
                         </>
                       ) : (
                         <>
@@ -226,80 +269,86 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
-            {/* Ferramentas Principais */}
-            <div className="mb-12">
-              <h3 style={{ color: "#2B2B2B" }} className="text-2xl font-bold mb-6">Ferramentas</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem" }}>
+            {/* Ferramentas */}
+            <section style={{ marginBottom: "3rem" }}>
+              <h2 style={{ color: "#2B2B2B", fontSize: "1.5rem", fontWeight: "bold", marginBottom: "1.5rem" }}>
+                Ferramentas
+              </h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem" }}>
                 <button
                   onClick={() => {
                     setActiveGroupCode(enteredGroups[0].code);
                     setCurrentView("characters");
                   }}
                   style={{
-                    backgroundColor: "#FFFFFF",
-                    borderColor: "#E8E0D0",
-                    border: "1px solid #E8E0D0",
-                    borderRadius: "0.75rem",
-                    padding: "1.5rem",
+                    backgroundColor: "#7A4E2D",
+                    color: "#FFFFFF",
+                    padding: "2rem",
+                    borderRadius: "1rem",
+                    border: "none",
                     cursor: "pointer",
-                    textAlign: "left",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "1rem",
                     transition: "all 0.3s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(122, 78, 45, 0.1)";
-                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.backgroundColor = "#6A3E1F";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = "none";
-                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.backgroundColor = "#7A4E2D";
                   }}
                 >
-                  <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
-                    <Users style={{ color: "#7A4E2D" }} className="w-6 h-6" />
+                  <Users style={{ color: "#F5F1E8" }} className="w-8 h-8" />
+                  <div>
+                    <h3 style={{ fontWeight: "bold", fontSize: "1.125rem" }}>Personagens</h3>
+                    <p style={{ fontSize: "0.875rem", opacity: 0.9 }}>Crie e desenvolva os protagonistas da sua história.</p>
                   </div>
-                  <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Personagens</h4>
-                  <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Crie e desenvolva os protagonistas da sua história.</p>
                 </button>
-                
+
                 <button
                   onClick={() => {
                     setActiveGroupCode(enteredGroups[0].code);
                     setCurrentView("ideas");
                   }}
                   style={{
-                    backgroundColor: "#FFFFFF",
-                    borderColor: "#E8E0D0",
-                    border: "1px solid #E8E0D0",
-                    borderRadius: "0.75rem",
-                    padding: "1.5rem",
+                    backgroundColor: "#7A4E2D",
+                    color: "#FFFFFF",
+                    padding: "2rem",
+                    borderRadius: "1rem",
+                    border: "none",
                     cursor: "pointer",
-                    textAlign: "left",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "1rem",
                     transition: "all 0.3s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(122, 78, 45, 0.1)";
-                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.backgroundColor = "#6A3E1F";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = "none";
-                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.backgroundColor = "#7A4E2D";
                   }}
                 >
-                  <div style={{ backgroundColor: "#F5F1E8", borderRadius: "0.5rem", width: "3rem", height: "3rem", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
-                    <Lightbulb style={{ color: "#7A4E2D" }} className="w-6 h-6" />
+                  <Lightbulb style={{ color: "#F5F1E8" }} className="w-8 h-8" />
+                  <div>
+                    <h3 style={{ fontWeight: "bold", fontSize: "1.125rem" }}>Ideias</h3>
+                    <p style={{ fontSize: "0.875rem", opacity: 0.9 }}>Capture inspirações e rascunhos para sua trama.</p>
                   </div>
-                  <h4 style={{ color: "#2B2B2B" }} className="text-lg font-semibold mb-2">Ideias</h4>
-                  <p style={{ color: "#5C5C5C", fontSize: "0.875rem" }}>Capture inspirações e rascunhos para sua trama.</p>
                 </button>
               </div>
-            </div>
+            </section>
 
-            {/* Gerenciar Grupos */}
-            <div style={{ backgroundColor: "#FFFFFF", borderColor: "#E8E0D0", border: "1px solid #E8E0D0", borderRadius: "0.75rem", padding: "2rem" }}>
-              <h3 style={{ color: "#2B2B2B" }} className="text-xl font-bold mb-4">Entrar em Outro Grupo</h3>
-              <div style={{ display: "flex", gap: "1rem", flexDirection: "column", maxWidth: "400px" }}>
+            {/* Entrar em Outro Grupo */}
+            <section>
+              <h2 style={{ color: "#2B2B2B", fontSize: "1.5rem", fontWeight: "bold", marginBottom: "1.5rem" }}>
+                Entrar em Outro Grupo
+              </h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 <input
                   type="text"
                   placeholder="Digite o código do grupo"
@@ -309,10 +358,11 @@ export default function Home() {
                   style={{
                     backgroundColor: "#F5F1E8",
                     color: "#2B2B2B",
-                    padding: "0.75rem",
-                    borderRadius: "0.5rem",
+                    padding: "1rem",
+                    borderRadius: "0.75rem",
                     border: "1px solid #E8E0D0",
                     fontSize: "1rem",
+                    fontWeight: "500",
                   }}
                 />
                 <button
@@ -334,7 +384,7 @@ export default function Home() {
                   <p style={{ color: "#E74C3C", fontSize: "0.875rem" }}>{error}</p>
                 )}
               </div>
-            </div>
+            </section>
           </div>
         </main>
       </div>
